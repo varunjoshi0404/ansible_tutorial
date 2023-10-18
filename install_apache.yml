@@ -7,11 +7,29 @@
   - name: update repository index
     apt:
       update_cache: yes
+    when: ansible_distribution == "Ubuntu"
   - name: install apache2 package
     apt:
       name: apache2
-      state: absent
-  - name: add php support for apache
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+  - name: install php library for apace
     apt:
       name: libapache2-mod-php
-      state: absent
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: update repository index
+    dnf:
+      update_cache: yes
+    when: ansible_distribution == "Amazon"
+  - name: install apache2 package
+    dnf:
+      name: httpd
+      state: latest
+    when: ansible_distribution == "Amazon"
+  - name: install php library for apace
+    dnf:
+      name: php
+      state: latest
+    when: ansible_distribution == "Amazon"
