@@ -7,13 +7,11 @@
   - name: install updates RH/CentOS
     tags: always
     package:
-      update_only: yes
       update_cache: yes
     when: ansible_distribution == "Amazon"
   - name: install updates Ubuntu
     tags: always
     package:
-      upgrade: dist
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
     
@@ -37,6 +35,21 @@
       - php
       state: latest
     when: ansible_distribution == "Amazon"
+
+  - name: change email address for admin
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin somebody@somewhere.net
+    when: ansible_distribution == "Amazon"
+    register: httpd
+
+  - name: restart httpd (CentOS)
+    service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
+
   - name: copy default website file to web servers
     tags: apache,apache2,httpd
     copy:
@@ -45,6 +58,12 @@
       owner: root
       group: root
       mode: 0644
+  - name: run service upon install (CentOS)
+    service:
+             name: httpd
+             state: started
+             enabled: yes
+    when: ansible_distribution == "Amazon" 
 
 
 - hosts: db_servers
@@ -75,4 +94,29 @@
       name: samba
       state: latest
     when: ansible_distribution == ["Amazon", "Ubuntu"]
+
+- hosts: workstations
+  become: true
+  tasks:
+    - name: install unzip package
+      package:
+        name: unzip
+    - name: install terraform
+      unarchive:
+        src: https://releases.hashicorp.com/terraform/1.6.2/terraform_1.6.2_linux_amd64.zip
+        dest: /usr/local/bin
+        remote_src: yes
+        mode: 0755
+        owner: root
+        group: root
+
+- hosts: all
+  become: true
+  tasks:
+    - name: add ssh key for simone
+      tags: always
+      authorized_key:
+        user: simone
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEcpyYbwOBD7kL7s3SlG+BjGH0p+OvSHtvKWpugVGZP2 foransibleuselatest"
+
 
